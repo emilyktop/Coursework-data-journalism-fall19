@@ -1,0 +1,4 @@
+"0","mingo%>%"
+"0","  group_by(combined_labeler_name, reporter_name, buyer_name) %>%"
+"0","  summarize(pills_per_grouping=sum(dosage_unit)) %>%"
+"0","  arrange(desc(pills_per_grouping))"

@@ -1,0 +1,4 @@
+"0",""
+"0","#create new column of state distribution, if WV or not"
+"0","mingo_working <- mingo%>% "
+"0","  mutate(state_distribution= if_else(reporter_state=='WV', ""in_state_distribution"", ""out_of_state_distribution""))"

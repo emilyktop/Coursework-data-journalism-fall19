@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569597619203.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "444063933",
+    "id" : "DC7786E0",
+    "lastKnownWriteTime" : 1569604939,
+    "last_content_update" : 1569604939272,
+    "path" : "~/Desktop/UMD Graduate School/Fall 2019/Data Journalism/lab_04/lab_04_EMILY_TOP.Rmd",
+    "project_path" : "lab_04_EMILY_TOP.Rmd",
+    "properties" : {
+        "cursorPosition" : "595,191",
+        "last_setup_crc32" : "159AF2D4d4872713",
+        "scrollLine" : "587"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

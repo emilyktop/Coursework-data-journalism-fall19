@@ -1,0 +1,33 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569603187152.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "81709C71",
+    "lastKnownWriteTime" : 6290211743679381505,
+    "last_content_update" : 1569603187152,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "DDD82367",
+        "caption" : "mingo_working",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=mingo_working&cache_key=DDD82367",
+        "displayedObservations" : 37154,
+        "environment" : "",
+        "expression" : "mingo_working",
+        "object" : "mingo_working",
+        "preview" : 0,
+        "totalObservations" : 37154,
+        "variables" : 43
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 3,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

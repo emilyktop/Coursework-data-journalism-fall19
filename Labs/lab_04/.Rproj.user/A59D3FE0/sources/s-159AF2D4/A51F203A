@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1569604061294.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2596818378",
+    "id" : "A51F203A",
+    "lastKnownWriteTime" : 1569272645,
+    "last_content_update" : 1569272645,
+    "path" : "~/Desktop/UMD Graduate School/Fall 2019/Data Journalism/intro_to_r/intro_to_r.Rmd",
+    "project_path" : null,
+    "properties" : {
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 4,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
