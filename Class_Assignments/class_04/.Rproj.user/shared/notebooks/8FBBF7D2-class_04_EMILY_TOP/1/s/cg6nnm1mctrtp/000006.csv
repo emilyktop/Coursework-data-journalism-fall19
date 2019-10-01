@@ -1,0 +1,4 @@
+"0","#load data"
+"0","baltimore <-  read_tsv(""data/arcos-md-baltimore-city-24510.tsv"")"
+"2","Error: 'data/arcos-md-baltimore-city-24510.tsv' does not exist in current working directory ('/Users/emilytop/Documents/GitHub/Emily-Top-Data-Journalism/Class_Assignments/class_04').
+"

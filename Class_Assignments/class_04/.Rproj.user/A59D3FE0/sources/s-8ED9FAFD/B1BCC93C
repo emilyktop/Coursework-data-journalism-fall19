@@ -5,13 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "444063933",
+    "hash" : "0",
     "id" : "B1BCC93C",
     "lastKnownWriteTime" : 1569604939,
     "last_content_update" : 1569604939,
     "path" : "~/Documents/GitHub/Emily-Top-Data-Journalism/Labs/lab_04/lab_04_EMILY_TOP.Rmd",
     "project_path" : null,
     "properties" : {
+        "cursorPosition" : "97,9",
+        "scrollLine" : "89"
     },
     "read_only" : false,
     "read_only_alternatives" : [

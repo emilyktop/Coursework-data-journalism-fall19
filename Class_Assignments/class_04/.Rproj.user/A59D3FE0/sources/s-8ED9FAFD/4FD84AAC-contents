@@ -75,12 +75,22 @@ There is one record (row or observation) per transaction (a shipment from a manu
 
 **Task**: Create a code block below, and write and execute the function to load in the data of shipments to Baltimore City, Maryland and store it as an object called baltimore. Write a comment describing what you are doing.  
 
+```{r}
+#load data from working directory-- Documents/GitHub/Class_Assignments/class_04
+baltimore <- read_tsv("data/arcos-md-baltimore-city-24510-itemized.tsv")
+
+```
 ## Examine the Data
 
 Now that the data is in, spend some time examining it.
 
-**Task**: Create a code block below, and write and execute a function to open and view the spreadsheet in a new window tab that you can examine.  In that browser window, use your mouse to sort by a handful of columns, highest to lowest and lowest to highest.  In that browser window, practice turning on filters with your mouse to examine a subset of the data.    
+**Task**: Create a code block below, and write and execute a function to open and view the spreadsheet in a new window tab that you can examine.  In that browser window, use your mouse to sort by a handful of columns, highest to lowest and lowest to highest.  In that browser window, practice turning on filters with your mouse to examine a subset of the data.
 
+```{r}
+#view baltimore data in new tab
+view(baltimore)
+
+```
 **Task**: Create a code block below and use the glimpse and summary function to examine the shape of the data. Answer each of the following questions in a comment inside the code block:
 * How many rows does the data have? How many columns?   
 * Each column is stored in one of two formats: "chr", or strings of characters, generally used for text; and "dbl", a number format on which mathematical operations can be performed.  Do you see any examples of a column stored as a "dbl" that doesn't really need to be, because we would never do math on it? Are there any columns stored as character that you think should be stored in another format entirely?

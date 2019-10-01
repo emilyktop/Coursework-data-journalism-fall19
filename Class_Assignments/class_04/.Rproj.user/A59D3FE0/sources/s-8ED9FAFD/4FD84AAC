@@ -2,19 +2,19 @@
     "collab_server" : "",
     "contents" : "",
     "created" : 1569943881968.000,
-    "dirty" : false,
+    "dirty" : true,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "3026363509",
+    "hash" : "0",
     "id" : "4FD84AAC",
-    "lastKnownWriteTime" : 1569940904,
-    "last_content_update" : 1569943915845,
-    "path" : "~/Documents/GitHub/Emily-Top-Data-Journalism/Class_Assignments/class_04/class_04.Rmd",
-    "project_path" : "class_04.Rmd",
+    "lastKnownWriteTime" : 1569944285,
+    "last_content_update" : 1569944318771,
+    "path" : "~/Documents/GitHub/Emily-Top-Data-Journalism/Class_Assignments/class_04/class_04_EMILY_TOP.Rmd",
+    "project_path" : "class_04_EMILY_TOP.Rmd",
     "properties" : {
-        "cursorPosition" : "64,15",
+        "cursorPosition" : "89,31",
         "last_setup_crc32" : "8ED9FAFDd4872713",
-        "scrollLine" : "54"
+        "scrollLine" : "74"
     },
     "read_only" : false,
     "read_only_alternatives" : [
