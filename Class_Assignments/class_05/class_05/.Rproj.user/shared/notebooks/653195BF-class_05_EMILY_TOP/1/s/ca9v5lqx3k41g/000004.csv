@@ -1,0 +1,6 @@
+"0","#antijoin"
+"0","pharmacies_left_filter <- pharmacies_pills %>%"
+"0","  anti_join(pharmacies_info, by=""buyer_dea_no"")"
+"0",""
+"0","#Again, this must mean that there are no buyers in the pharmacy pills dataset that are not in the pharmacy address dataset."
+"0",""

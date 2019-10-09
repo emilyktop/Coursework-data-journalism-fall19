@@ -1,0 +1,3 @@
+"0","pharmacies_year %>%"
+"0","  filter(buyer_state == ""MD"", year == ""2010"", buyer_bus_act == ""PRACTITIONER"") %>%"
+"0","  arrange(desc(dosage_unit))"

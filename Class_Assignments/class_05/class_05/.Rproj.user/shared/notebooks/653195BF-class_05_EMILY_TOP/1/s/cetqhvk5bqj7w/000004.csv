@@ -1,0 +1,7 @@
+"0","#left join with filter"
+"0","pharmacies_left_filter <- pharmacies_pills %>%"
+"0","  left_join(pharmacies_info, by=""buyer_dea_no"") %>%"
+"0","  filter(is.na(buyer_address1))"
+"0",""
+"0","#It must mean that none of the records had missing buyer addresses. "
+"0",""

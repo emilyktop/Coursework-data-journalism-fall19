@@ -1,0 +1,5 @@
+"0","#Which practitioner in WV (which had the highest rate of pills) had the highest number of pills sent to it over the time period?"
+"0",""
+"0","pharmacies_pills %>%"
+"0","  filter(buyer_state == ""WV"", buyer_bus_act == ""PRACTITIONER"") %>%"
+"0","  arrange(desc(total_pills))"

@@ -1,0 +1,5 @@
+"0","#do an anti join to see if there are any buyers in addresses that are not in pharmacy pills dataset"
+"0",""
+"0","pharmacies_anti <- pharmacies_info %>%"
+"0","  anti_join(pharmacies_pills, by=""buyer_dea_no"")"
+"0",""

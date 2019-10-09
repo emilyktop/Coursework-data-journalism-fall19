@@ -1,0 +1,6 @@
+"0","#left join"
+"0","pharmacies_left <- pharmacies_pills %>%"
+"0","  left_join(pharmacies_info, by=""buyer_dea_no"")"
+"0",""
+"0","#There are the same number of observations for the left join as there are for the inner join. Because inner joins puts back numbers with a match, so that might mean that the ones joined by a left join all had matches."
+"0",""

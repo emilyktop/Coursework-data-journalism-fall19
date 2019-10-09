@@ -1,0 +1,8 @@
+"0","pills_population <- pharmacies_pills %>%"
+"0","  inner_join(population, by=""buyer_state"")"
+"0",""
+"0","pills_population %>%"
+"0","  group_by(buyer_state) %>%"
+"0","  mutate(total_state=sum(total_pills)) %>%"
+"0","  mutate(rate=total_state/population_average) %>%"
+"0","  arrange(desc(rate))"

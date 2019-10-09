@@ -1,0 +1,20 @@
+"0","#glimpse at pharmacy pill"
+"0","glimpse(pharmacies_pills)"
+"1","Observations: 148,597
+"
+"1","Variables: 5
+"
+"1","$ buyer_dea_no  [3m[38;5;246m<fct>[39m[23m A90777889, A91109796, A91487900, A91534468, A91565778, A918193…
+"
+"1",""
+"1","$ buyer_bus_act [3m[38;5;246m<fct>[39m[23m RETAIL PHARMACY, RETAIL PHARMACY, RETAIL PHARMACY, RETAIL PHAR…
+"
+"1",""
+"1","$ buyer_county  [3m[38;5;246m<fct>[39m[23m KINGS, TRAVIS, BRONX, NEW YORK, COOK, NEW YORK, LOS ANGELES, A…
+"
+"1",""
+"1","$ buyer_state   [3m[38;5;246m<fct>[39m[23m NY, TX, NY, NY, IL, NY, CA, CA, NJ, TX, IL, NY, NY, NY, CA, NY…
+"
+"1",""
+"1","$ total_pills   [3m[38;5;246m<dbl>[39m[23m 628020, 153270, 1741280, 16520, 440670, 41100, 393600, 309300,…
+"

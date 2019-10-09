@@ -1,0 +1,11 @@
+"0","#glimpse at population"
+"0","glimpse(population)"
+"1","Observations: 51
+"
+"1","Variables: 2
+"
+"1","$ buyer_state        [3m[38;5;246m<fct>[39m[23m AK, AL, AR, AZ, CA, CO, CT, DC, DE, FL, GA, HI, IA, ID, I…
+"
+"1",""
+"1","$ population_average [3m[38;5;246m<int>[39m[23m 683077, 4698683, 2857450, 6256743, 36587988, 4879029, 353…
+"

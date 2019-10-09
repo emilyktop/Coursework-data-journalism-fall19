@@ -1,0 +1,6 @@
+"0","#Which state and year had the highest number of pills?"
+"0",""
+"0","pharmacies_year %>%"
+"0","  group_by(buyer_state, year)%>%"
+"0","  summarize(pills_state = sum(dosage_unit)) %>%"
+"0","  arrange(desc(pills_state))"

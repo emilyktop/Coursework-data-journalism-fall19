@@ -1,0 +1,6 @@
+"0","#Which county had the number of pills?"
+"0",""
+"0","pharmacies_pills %>%"
+"0","  group_by(buyer_county, buyer_state) %>%"
+"0","  summarize(total_county= sum(total_pills)) %>%"
+"0","  arrange(desc(total_county))"
