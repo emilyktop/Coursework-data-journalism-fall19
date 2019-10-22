@@ -1,0 +1,151 @@
+---
+title: "Maryland State data"
+author: "Emily Top"
+date: "10/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#load tinyverse, janitor, and lubridate
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(arcos)
+
+```
+
+```{r}
+#load statewide data
+state<- read_tsv("arcos-md-statewide-itemized.tsv")
+```
+
+```{r}
+#clean data
+ state<- clean_names(state)
+
+```
+
+
+```{r}
+#glimpse at data
+glimpse(state)
+```
+
+There are over 3 million observations with 42 variables.
+
+```{r}
+#total pills per county
+state %>%
+  group_by(buyer_county) %>%
+  summarise(total_pills= sum(dosage_unit))%>%
+  arrange(desc(total_pills))
+
+```
+
+
+```{r}
+# store a password as an object called key
+key <- "uO4EK6I"
+```
+
+```{r}
+#Check county population data with that online with acros
+MD_county_pop <- county_population(state="MD", key=key)
+
+```
+
+```{r}
+#Create county averages for population
+MD_county_pop_avg <-
+  MD_county_pop %>%
+  group_by(county_name) %>%
+  mutate(county_pop_avg= mean(population))
+
+
+
+```
+
+```{r}
+#combine population data and state data
+MD_county_pop_avg <- clean_names(MD_county_pop_avg)
+```
+
+```{r}
+#glimpse at county population data
+glimpse(MD_county_pop_avg)
+
+```
+
+```{r}
+#join population data with state data
+state_population <- state %>%
+  inner_join(MD_county_pop_avg, by ="buyer_county")
+
+```
+
+```{r}
+#Create a county pills/ person rate
+state_pop_rate <- state_population %>%
+  select(buyer_county, dosage_unit, county_pop_avg) %>%
+  group_by(buyer_county) %>%
+  mutate(total_county=sum(dosage_unit)) %>%
+  mutate(rate=total_county/county_pop_avg) %>%
+  arrange(desc(rate))
+
+```
+
+
+```{r}
+#view pills per person
+state_pop_rate %>%
+  group_by(buyer_county) %>%
+  summarize(rate1=min(rate)) %>%
+  arrange(desc(rate1))
+
+
+```
+
+Kent County had the highest rate of pills per person over the time period, given the average population of the time and the number of pills in the area. **CHECK WITH SEAN BECAUSE THIS DOES NOT MATCH UP TO WAPO NUMBERS**
+
+```{r}
+#Trying to figure out how WaPo got their numbers of pills per person per year
+state_population %>%
+  select(buyer_county, dosage_unit, county_pop_avg) %>%
+  group_by(buyer_county) %>%
+  mutate(total_county=sum(dosage_unit)) %>%
+  mutate(total_county_peryear= total_county/7)%>%
+  mutate(rate2=total_county_peryear/county_pop_avg) 
+
+
+```
+
+```{r}
+#pharmacies with the highest number of pills over time
+state %>%
+  group_by(buyer_name, buyer_address1, buyer_city) %>%
+  summarize(total_pills=sum(dosage_unit)) %>%
+  arrange(desc(total_pills))
+
+
+```
+
+```{r}
+state %>%
+  filter(str_detect(transaction_date == 2006)) %>%
+  group_by(buyer_county) %>%
+  summarize(total_pills=sum(dosage_unit)) %>%
+  arrange(desc(total_pills))
+  
+
+```
+
