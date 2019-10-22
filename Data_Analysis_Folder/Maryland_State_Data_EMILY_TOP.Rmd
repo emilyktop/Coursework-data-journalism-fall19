@@ -1,0 +1,113 @@
+---
+title: "Maryland State data"
+author: "Emily Top"
+date: "10/10/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+#load tinyverse, janitor, and lubridate
+library(tidyverse)
+library(janitor)
+library(lubridate)
+library(arcos)
+library(tidycensus)
+
+```
+
+```{r}
+# store one of our API keys as an object called key
+key <- "uO4EK6I"
+```
+
+Load the data needed and clean up the column names.
+
+```{r}
+arcos_county_pills_per_year <- summarized_county_annual(key = key) %>%
+  clean_names()
+```
+
+```{r}
+#Create a file for Maryland pills per year by county
+maryland_pills_per_year <- arcos_county_pills_per_year %>%
+  filter(buyer_state == "MD") %>%
+  select(buyer_county, year, dosage_unit, countyfips)
+
+#Create a file for Maryland population per year by county
+maryland_population <- county_population(key = key) %>%
+  clean_names() %>%
+  filter(buyer_state == "MD") %>%
+  select(buyer_county, population, year, countyfips)
+
+#Combine pills and population data for Maryland
+maryland_state <- maryland_pills_per_year %>%
+  full_join(maryland_population, by=c("buyer_county", "year")) 
+
+#create pills per person subset
+maryland_pills_per_person_per_year <- maryland_state %>%
+  group_by(buyer_county, year) %>%
+  mutate(total_pills = sum(dosage_unit))%>%
+  mutate(pills_per_person = total_pills/population)
+
+```
+
+Once the various columns have been calculated, create a graphic to view the data more easily. 
+```{r}
+  ggplot(maryland_pills_per_person_per_year) +
+  geom_bar(stat="identity", aes(year, pills_per_person, fill=buyer_county)) +
+  labs(x="Year", y="Total pills", title="Steady rise in opioids in Maryland up until 2011, slight drop in 2012", caption = "Source: DEA ARCOS database, via Washington Post", fill="County") +
+  scale_x_continuous(breaks = c(2006, 2007, 2008, 2009, 2010, 2011, 2012)) +
+  scale_y_continuous(labels = comma)
+  
+```
+
+The Rural Maryland Council, which is a part of the Maryland state government, defines the following counties as rural in Maryland: Allegany, Calvert, Caroline, Carroll, Cecil, Charles, Dorchester, Frederick, Garrett, Harford, Kent, Queen Anne’s, Somerset, St. Mary’s, Talbot, Washington, Wicomico and Worcester (https://rural.maryland.gov/the-rural-maryland-council/).
+
+```{r}
+#Create a column defining each county as either rural or urban in Maryland. 
+
+
+```
+  
+
+
+```{r}
+#total pills per county
+state %>%
+  group_by(buyer_county) %>%
+  summarise(total_pills= sum(dosage_unit))%>%
+  arrange(desc(total_pills))
+
+```
+
+
+```{r}
+#pharmacies with the highest number of pills over time
+state %>%
+  group_by(buyer_name, buyer_address1, buyer_city) %>%
+  summarize(total_pills=sum(dosage_unit)) %>%
+  arrange(desc(total_pills))
+
+
+```
+
+```{r}
+state %>%
+  filter(str_detect(transaction_date == 2006)) %>%
+  group_by(buyer_county) %>%
+  summarize(total_pills=sum(dosage_unit)) %>%
+  arrange(desc(total_pills))
+  
+
+```
+
