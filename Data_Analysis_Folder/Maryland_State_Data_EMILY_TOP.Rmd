@@ -71,22 +71,138 @@ Once the various columns have been calculated, create a graphic to view the data
   
 ```
 
+```{r}
+#Create a graphic for maryland pills per person over time, separate graphs for different areas
+
+ggplot(maryland_pills_per_person_per_year) +
+  geom_bar(stat="identity", aes(year, pills_per_person, fill=buyer_county)) +
+  labs(x="Year", y="Pills per Person", title="Allegany, Kent, and Cecil counties had higher pills per person than \nother counties. Cecil county drops nearer to the average in 2012.", caption = "Source: DEA ARCOS database, via Washington Post", fill="County") +
+  scale_x_continuous(breaks = c(2006, 2007, 2008, 2009, 2010, 2011, 2012)) +
+  scale_y_continuous(labels = comma) +
+  facet_wrap(nrow=2, . ~ buyer_county) +
+theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill="none")
+
+```
+
 The Rural Maryland Council, which is a part of the Maryland state government, defines the following counties as rural in Maryland: Allegany, Calvert, Caroline, Carroll, Cecil, Charles, Dorchester, Frederick, Garrett, Harford, Kent, Queen Anne’s, Somerset, St. Mary’s, Talbot, Washington, Wicomico and Worcester (https://rural.maryland.gov/the-rural-maryland-council/).
 
 ```{r}
 #Create a column defining each county as either rural or urban in Maryland. 
-
+maryland_rural_urban <- maryland_pills_per_person_per_year %>%
+  mutate(rural_or_urban = case_when(
+    buyer_county == "ALLEGANY" ~ "rural",
+    buyer_county == "CALVERT" ~ "rural",
+    buyer_county == "CAROLINE" ~"rural",
+    buyer_county == "CARROLL" ~"rural", 
+    buyer_county == "CECIL" ~"rural",
+    buyer_county == "CHARLES" ~"rural", 
+    buyer_county == "DORCHESTER" ~"rural",
+    buyer_county == "FREDERICK" ~"rural",
+    buyer_county == "GARRETT"  ~"rural",
+    buyer_county == "HARFORD"  ~"rural", 
+    buyer_county == "KENT"  ~"rural",
+    buyer_county == "QUEEN ANNES" ~"rural",
+    buyer_county == "SOMERSET" ~"rural",
+    buyer_county == "SAINT MARYS" ~"rural",
+    buyer_county == "TALBOT" ~"rural",
+    buyer_county == "WASHINGTON" ~"rural",
+    buyer_county == "WICOMICO" ~"rural",
+    buyer_county == "WORCESTER" ~ "rural",
+    TRUE ~ "urban"
+  ))
 
 ```
+
+Check out this stuff below later.
+
+```{r}
+#Create a graphic of rural v urban for total pills
+ ggplot(maryland_rural_urban) +
+  geom_bar(stat="identity", aes(year, total_pills, fill=rural_or_urban)) +
+  labs(x="Year", y="Total pills", title="Steady rise in opioids in Maryland up until 2011, slight drop in 2012", caption = "Source: DEA ARCOS database, via Washington Post", fill="County") +
+  scale_x_continuous(breaks = c(2006, 2007, 2008, 2009, 2010, 2011, 2012)) +
+  scale_y_continuous(labels = comma)
   
+
+```
+
+Rural areas are generally know to be poorer. I want to test this theory to see if the poorer counties had a higher influx of pills than the wealthier counties. This analysis below will be for just 2012.
+
+```{r}
+#This part of the code is taken from Sean Mussenden
+#Get Median Household Income Data for each Maryland County from Tidycensus 
+# Help using TidyCensus, including how to find variables of interest. https://walkerke.github.io/tidycensus/articles/basic-usage.html
+
+# Define census api key. (This census api key is my own) https://api.census.gov/data/key_signup.html
+
+census_api_key("fc6d975718c9991150322ee6fa8f8b8718c217b6")
+
+# Store a table with the median household income value for each county using the get_acs() function.  ACS is short for American Community Survey, one of two main census products. In the table that's loaded in, the :estimate" is the median household income for that county, averaged over 5 years ending in 2012. 
+
+county_median_household_income <- get_acs(geography = "county", variables = c("B19013_001"), survey="acs5", year = 2012)
+
+# How did I get the variables?  I pulled in a table from the tidycensus package that lists all of the thousands of variables available through the census.  Load the table below and view it.  Use filters in the R Viewer window to find things you might want to use later. You can also find table and variable numbers at https://data.census.gov/cedsci/.
+
+acs_variables <- load_variables(2012, "acs5", cache = TRUE)
+
+# Filter just for Maryland counties
+md_county_median_household_income <- county_median_household_income %>%
+  filter(str_detect(NAME, ", Maryland"))
+
+#This part of the code was written by myself
+
+#Create a graphic for Maryland pills per person based on county population
+#create 2012 pills subset for Maryland
+maryland_pills_2012 <- arcos_county_pills_per_year %>%
+  filter(buyer_state == "MD", year=="2012") %>%
+  select(buyer_county, year, dosage_unit, countyfips)
+
+#Create population subset for Maryland in 2012
+maryland_population_2012 <- county_population(key = key) %>%
+  clean_names() %>%
+  filter(buyer_state == "MD", year=="2012") %>%
+  select(buyer_county, population, countyfips)
+
+#Combine pills and population data for Maryland in 2012
+maryland_2012 <- maryland_pills_2012 %>%
+  inner_join(maryland_population_2012, by=("buyer_county")) 
+
+#create pills per person subset
+maryland_pills_per_person_2012 <- maryland_2012 %>%
+  group_by(buyer_county) %>%
+  mutate(total_pills = sum(dosage_unit))%>%
+  mutate(pills_per_person = total_pills/population)
+
+#Create pills per person to median household income for Maryland in 2012
+ggplot(maryland_pills_per_person_2012) +
+  geom_point(aes(population, pills_per_person)) +
+  labs(x="County Population in 2012", y="Pills per Person in 2012", title="Washington, Harford, Anne Arudnel, Baltimore, and Baltimore City had higher \nthan average pills per person given each county's population", caption = "Source: DEA ARCOS database, via Washington Post", fill="buyer_county") +
+  scale_y_continuous(labels = comma) +
+  scale_x_continuous(labels = comma) + 
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  geom_smooth(aes(population, pills_per_person), method = "lm", se = FALSE) +
+  geom_text_repel(aes(population, pills_per_person, label=buyer_county), subset(maryland_pills_per_person_2012, population > 125000))
+
+```
 
 
 ```{r}
-#total pills per county
-state %>%
-  group_by(buyer_county) %>%
-  summarise(total_pills= sum(dosage_unit))%>%
-  arrange(desc(total_pills))
+#National pills per person, first step is to gather population data
+nation_population <- county_population(key = key) %>%
+  clean_names()
+
+#do a join of pills and population
+nation_pills__per_year <- arcos_county_pills_per_year %>%
+  full_join(nation_population, by=c("countyfips", "year")) 
+
+#create pills per person subset for the nation
+nation_pills_per_person_per_year <- nation_pills__per_year %>%
+  group_by(countyfips, year) %>%
+  mutate(total_pills = sum(dosage_unit)) %>%
+  mutate(pills_per_person = total_pills/population) %>%
+  arrange(desc(pills_per_person))
+
 
 ```
 
