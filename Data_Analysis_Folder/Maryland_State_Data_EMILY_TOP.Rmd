@@ -114,6 +114,20 @@ maryland_rural_urban <- maryland_pills_per_person_per_year %>%
 
 ```
 
+```{r}
+maryland_rural_urban %>%
+  group_by(buyer_county, rural_or_urban) %>%
+  summarise(county_total_pop = sum(population), county_total_pills = sum(total_pills)) %>%
+  group_by(rural_or_urban) %>%
+  summarise(group_total_pop = sum(county_total_pop), group_total_pills = sum(county_total_pills)) %>%
+  mutate(group_pills_per_person = group_total_pills/group_total_pop)
+  
+
+
+
+```
+
+
 Check out this stuff below later.
 
 ```{r}
@@ -185,6 +199,7 @@ ggplot(maryland_pills_per_person_2012) +
   geom_text_repel(aes(population, pills_per_person, label=buyer_county), subset(maryland_pills_per_person_2012, population > 125000))
 
 ```
+*** Check this
 
 
 ```{r}
@@ -206,24 +221,18 @@ nation_pills_per_person_per_year <- nation_pills__per_year %>%
 
 ```
 
+Questions for Sean:
+-How do I create the average pills per year for each county?
+-Is there any way to do the income analysis over the seven year period?
+-What's the best way to attack the national data?
+-Who are good people to contact and interview?
+-Maryland Health Department, Public Health Research in Rural Areas, academic research papers (for potential variables)
+--Why is it higher in rural areas?
 
-```{r}
-#pharmacies with the highest number of pills over time
-state %>%
-  group_by(buyer_name, buyer_address1, buyer_city) %>%
-  summarize(total_pills=sum(dosage_unit)) %>%
-  arrange(desc(total_pills))
+Next steps:
+-Linear regression model? data camp
+-Opioid death data 
+-Why?
 
 
-```
-
-```{r}
-state %>%
-  filter(str_detect(transaction_date == 2006)) %>%
-  group_by(buyer_county) %>%
-  summarize(total_pills=sum(dosage_unit)) %>%
-  arrange(desc(total_pills))
-  
-
-```
 
