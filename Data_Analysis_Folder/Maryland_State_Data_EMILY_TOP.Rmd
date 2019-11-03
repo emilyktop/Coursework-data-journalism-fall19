@@ -16,18 +16,28 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
 ```{r}
-#load tinyverse, janitor, and lubridate
+#load packages
 library(tidyverse)
 library(janitor)
 library(lubridate)
 library(arcos)
 library(tidycensus)
+library(ggthemes)
+library(scales)
+library(mapview)
+library(ggrepel)
 
 ```
 
 ```{r}
 # store one of our API keys as an object called key
 key <- "uO4EK6I"
+```
+
+Clear old data in in environment
+```{r}
+rm(list = ls())
+
 ```
 
 Load the data needed and clean up the column names.
@@ -70,6 +80,7 @@ Once the various columns have been calculated, create a graphic to view the data
   scale_y_continuous(labels = comma)
   
 ```
+
 
 ```{r}
 #Create a graphic for maryland pills per person over time, separate graphs for different areas
@@ -115,6 +126,8 @@ maryland_rural_urban <- maryland_pills_per_person_per_year %>%
 ```
 
 ```{r}
+#do rural and urban areas have different pills per person over the 7 years?
+
 maryland_rural_urban %>%
   group_by(buyer_county, rural_or_urban) %>%
   summarise(county_total_pop = sum(population), county_total_pills = sum(total_pills)) %>%
@@ -127,8 +140,59 @@ maryland_rural_urban %>%
 
 ```
 
+```{r}
+maryland_rural_urban %>%
+  filter(year== 2006) %>%
+  summarize(max(pills_per_person)) 
 
-Check out this stuff below later.
+```
+```{r}
+maryland_rural_urban %>%
+  filter(year== 2007) %>%
+  summarize(max(pills_per_person))
+
+```
+
+```{r}
+maryland_rural_urban %>%
+  filter(year== 2008) %>%
+  summarize(max(pills_per_person)) 
+
+```
+```{r}
+maryland_rural_urban %>%
+  filter(year== 2009) %>%
+  summarize(max(pills_per_person)) 
+```
+
+```{r}
+maryland_rural_urban %>%
+  filter(year== 2010) %>%
+  summarize(max(pills_per_person)) 
+
+```
+
+```{r}
+maryland_rural_urban %>%
+  filter(year== 2011) %>%
+  summarize(max(pills_per_person)) 
+
+```
+
+```{r}
+maryland_rural_urban %>%
+  filter(year== 2012) %>%
+  summarize(max(pills_per_person)) 
+
+```
+
+```{r}
+maryland_rural_urban %>%
+  summarize(max(pills_per_person)) %>%
+  arrange(desc(pills_per_person))
+
+```
+
 
 ```{r}
 #Create a graphic of rural v urban for total pills
@@ -140,6 +204,58 @@ Check out this stuff below later.
   
 
 ```
+
+```{r}
+# map code here
+# If you need to look up variables, this is how you do it
+acs_variables <- load_variables(2017, "acs5" )
+
+#add geo data, taken from lab 7
+county_geodata <- get_acs(geography = "county",
+              variables = "B01001_001", geometry = TRUE)
+
+state_geodata <- get_acs(geography = "state",
+              variables = "B01001_001", geometry = TRUE)
+
+county_geodata_shifted <- get_acs(geography = "county",
+              variables = "B01001_001", geometry = TRUE, shift_geo = TRUE)
+
+state_geodata_shifted <- get_acs(geography = "state",
+              variables = "B01001_001", geometry = TRUE, shift_geo = TRUE)
+
+arcos_county_population_per_year <- county_population(key = key) %>%
+  clean_names()
+
+pills_population <- arcos_county_population_per_year %>%
+  left_join(arcos_county_pills_per_year, by = c("countyfips", "year", "buyer_county","buyer_state"))
+
+pills_population <- pills_population %>%
+   mutate(statefips = str_sub(countyfips, 1,2)) %>%
+   select(statefips, countyfips, buyer_county, buyer_state,year, population,dosage_unit)
+
+pills_population_maryland <- pills_population %>%
+  filter(buyer_state == "MD") %>%
+  group_by(countyfips, buyer_county,year) %>%
+  summarise(total_pills=sum(dosage_unit, na.rm = TRUE),
+            total_population=sum(population, na.rm=TRUE)) %>%
+  mutate(pills_per_person=total_pills/total_population)
+
+geo_pills_population_maryland <- county_geodata_shifted %>%
+ inner_join(pills_population_maryland, by=c("GEOID" = "countyfips"))
+
+
+geo_pills_population_maryland %>%
+  ggplot(aes(fill = pills_per_person)) +
+  facet_wrap(~year, nrow=2) +
+  geom_sf(lwd = 0) +
+  theme_map() +
+  labs(fill='Pills per Person',title="Pills per person grew between 2006 and 2012 in Maryland", subtitle = "2006 thru 2012 pills per person, U.S. Census and ARCOS data", caption = "Source: ARCOS database") +
+  theme(legend.position="bottom") +
+  scale_fill_viridis_c(option = "magma",labels = comma)
+
+
+```
+
 
 Rural areas are generally know to be poorer. I want to test this theory to see if the poorer counties had a higher influx of pills than the wealthier counties. This analysis below will be for just 2012.
 
@@ -199,7 +315,7 @@ ggplot(maryland_pills_per_person_2012) +
   geom_text_repel(aes(population, pills_per_person, label=buyer_county), subset(maryland_pills_per_person_2012, population > 125000))
 
 ```
-*** Check this
+
 
 
 ```{r}
@@ -221,16 +337,61 @@ nation_pills_per_person_per_year <- nation_pills__per_year %>%
 
 ```
 
+```{r}
+#open rural and urban codes for the nation
+rural_urban_codes <- read_csv("ruralurbancodes2013.csv")
+
+rural_urban_codes %>%
+  clean_names()
+
+```
+
+```{r}
+#is countyfips a character variable?
+glimpse(nation_pills_per_person_per_year)
+
+```
+
+
+Cannot get these two datasets to join...
+```{r}
+#combine rural and urban codes with national data
+
+nation_rural_urban <- nation_pills_per_person_per_year %>%
+  full_join(rural_urban_codes, by=c("fips"="countyfips"))
+
+```
+
+
 Questions for Sean:
--How do I create the average pills per year for each county?
--Is there any way to do the income analysis over the seven year period?
--What's the best way to attack the national data?
+-How do I create the average pills per year for each county? --> 
+-Is there any way to do the income analysis over the seven year period? --> use income median average over the period
 -Who are good people to contact and interview?
 -Maryland Health Department, Public Health Research in Rural Areas, academic research papers (for potential variables)
+
 --Why is it higher in rural areas?
+( Source: https://www-ncbi-nlm-nih-gov.proxy-um.researchport.umd.edu/pmc/articles/PMC3935688/pdf/AJPH.2013.301709.pdf)
+-rural areas had higher prescription rates -> increased availability
+-age: rural areas generally have older populations -> chronic pain which is managed by opioids
+-embedded in culture
+-out migration of younger population -> strains economy b/c older workforce and less new economic infrastructure & selection effect, meaning the younger people who do stay in rural/ less economically strong areas may be more likely to develop risk factors that lead to drug use.
+-closer community ties plus economic pressure strains social network -> more likely to use drugs, but strong social ties may be a buffer against drug use so more research is necessary.
+-family ties -> prescription drugs are more likely to be legally obtained by friends & family 
+-structural factors -> more likely to have economic downturns and deprivation, loss/ change of structure of industry in America/ mismatch of skills to available jobs in the area, longer term unemployment and lower likelihood of upward mobility, lower wages for low-skill work
+
+(Source: https://www-tandfonline-com.proxy-um.researchport.umd.edu/doi/pdf/10.3109/00952990.2011.643971?needAccess=true)
+-according to this study, after controlling for basic demographic factors, being in a rural area (or rurality as the name the variable) appeared to increase illict drug use
+-familial norms -> experienced prescription drug use with family or friends -> but their study did not find this to affect their results
+-primary sources of drugs in rural areas was actually from drug users, not family
+-rural participants had higher reports of phsyical and mental health issues as well as drug and alcohol use problems in the last 30 days
+-seeking medical help for medical problems were not listed as something important to rural participants, but there were no differences between rural and urban regarding seeking help for mental, drug or alcohol problems
+-higher use of hydrocodone and OxyCotin in rural areas
+
+
 
 Next steps:
 -Linear regression model? data camp
+-> I have done some data camp exercises for this.
 -Opioid death data 
 -Why?
 
