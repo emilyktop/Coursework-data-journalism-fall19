@@ -141,6 +141,37 @@ maryland_rural_urban %>%
 ```
 
 ```{r}
+#using census definition of rural
+maryland_rural_urban2 <- maryland_pills_per_person_per_year %>%
+  mutate(rural_or_urban = case_when(
+    buyer_county == "CARROLL" ~"rural", 
+    buyer_county == "DORCHESTER" ~"rural",
+    buyer_county == "GARRETT"  ~"rural",
+    buyer_county == "KENT"  ~"rural",
+    buyer_county == "TALBOT" ~"rural",
+    TRUE ~ "urban"
+  ))
+
+```
+
+```{r}
+#do rural and urban areas have different pills per person over the 7 years? using census definition
+
+maryland_rural_urban2 %>%
+  group_by(buyer_county, rural_or_urban) %>%
+  summarise(county_total_pop = sum(population), county_total_pills = sum(total_pills)) %>%
+  group_by(rural_or_urban) %>%
+  summarise(group_total_pop = sum(county_total_pop), group_total_pills = sum(county_total_pills)) %>%
+  mutate(group_pills_per_person = group_total_pills/group_total_pop)
+  
+
+
+
+```
+
+
+
+```{r}
 maryland_rural_urban %>%
   filter(year== 2006) %>%
   summarize(max(pills_per_person)) 
@@ -340,10 +371,6 @@ nation_pills_per_person_per_year <- nation_pills__per_year %>%
 ```{r}
 #open rural and urban codes for the nation
 rural_urban_codes <- read_csv("ruralurbancodes2013.csv")
-
-rural_urban_codes %>%
-  clean_names()
-
 ```
 
 ```{r}
@@ -353,14 +380,119 @@ glimpse(nation_pills_per_person_per_year)
 ```
 
 
-Cannot get these two datasets to join...
 ```{r}
 #combine rural and urban codes with national data
 
 nation_rural_urban <- nation_pills_per_person_per_year %>%
-  full_join(rural_urban_codes, by=c("fips"="countyfips"))
+  inner_join(rural_urban_codes, by=c("countyfips"="FIPS"))
 
 ```
+
+The USDA has definitions for metro (urban) and nonmetro (rural) areas. "The official Office of Management and Budget (OMB) metro and nonmetro categories have been subdivided into three metro and six nonmetro categories." (Source: https://www.ers.usda.gov/data-products/rural-urban-continuum-codes.aspx#.UYJuVEpZRvY)
+
+```{r}
+#create rural/ urban column for nation
+nation_rural_urban <- nation_rural_urban %>%
+  mutate(rural_or_urban = case_when(
+    RUCC_2013 > 3 ~"rural", 
+    TRUE ~ "urban"))
+```
+
+```{r}
+#nation rural v urban pills per person
+nation_rural_urban %>%
+  group_by(countyfips, rural_or_urban) %>%
+  summarise(county_total_pop = sum(population), county_total_pills = sum(total_pills)) %>%
+  filter(!is.na(county_total_pop), !is.na(county_total_pills)) %>%
+  group_by(rural_or_urban) %>%
+  summarise(group_total_pop = sum(county_total_pop), group_total_pills = sum(county_total_pills)) %>%
+  mutate(group_pills_per_person = group_total_pills/ group_total_pop)
+
+```
+
+```{r}
+#add opioid death data 
+
+opioid_deaths <- read_csv("opioid_deaths.csv") %>%
+  clean_names()
+
+view(opioid_deaths)
+
+opioid_deaths <- opioid_deaths %>%
+  clean_names()
+
+glimpse(opioid_deaths)
+
+#change county_code to a character
+opioid_deaths$county_code <- as.character(opioid_deaths$county_code)
+
+#change deaths to numeric
+opioid_deaths$deaths <- as.numeric(opioid_deaths$deaths)
+```
+
+```{r}
+#combine opioid deaths with pills and population and rural_urban
+
+pills_deaths_rural <- nation_rural_urban %>%
+  inner_join(opioid_deaths, by=c("countyfips"="county_code"))
+
+glimpse(pills_deaths_rural)
+  
+```
+
+```{r}
+#death rate due to opioids
+pills_deaths_rural$population.y <- as.numeric(pills_deaths_rural$population.y)
+
+options(scipen = 999)
+
+pills_deaths_rural %>%
+  group_by(countyfips, rural_or_urban) %>%
+  summarise(county_total_pop = sum(population.x), county_total_deaths = sum(deaths)) %>%
+  filter(!is.na(county_total_pop), !is.na(county_total_deaths)) %>%
+  group_by(rural_or_urban) %>%
+  summarise(group_total_pop = sum(county_total_pop), group_total_deaths = sum(county_total_deaths)) %>%
+  mutate(group_deaths_per_pop = (group_total_deaths/ group_total_pop)*1000)
+#deaths per 1000 people?
+
+```
+
+If my calculations are correct, for the entire country, rural areas have a higher death rate to opioids than urban areas
+
+What about in Maryland?
+
+```{r}
+
+pills_deaths_rural %>%
+  filter(buyer_state.x == "MD") %>%
+  group_by(countyfips, rural_or_urban) %>%
+  summarise(county_total_pop = sum(population.x), county_total_deaths = sum(deaths)) %>%
+  filter(!is.na(county_total_pop), !is.na(county_total_deaths)) %>%
+  group_by(rural_or_urban) %>%
+  summarise(group_total_pop = sum(county_total_pop), group_total_deaths = sum(county_total_deaths)) %>%
+  mutate(group_deaths_per_pop = (group_total_deaths/ group_total_pop)*1000)
+
+```
+
+It appears that in Maryland, the number of deaths due to opioids in not higher in rural areas than it is in urban areas. What about when we look at it based on Maryland's definition of rural v urban?
+
+```{r}
+#join death information with maryland information
+
+maryland_opioids <- maryland_rural_urban2 %>%
+  inner_join(opioid_deaths, by=c("countyfips.x"="county_code"))
+
+maryland_opioids %>%
+  group_by(countyfips.x, rural_or_urban) %>%
+  summarise(county_total_pop = sum(population.x), county_total_deaths = sum(deaths)) %>%
+  filter(!is.na(county_total_pop), !is.na(county_total_deaths)) %>%
+  group_by(rural_or_urban) %>%
+  summarise(group_total_pop = sum(county_total_pop), group_total_deaths = sum(county_total_deaths)) %>%
+  mutate(group_deaths_per_pop = (group_total_deaths/ group_total_pop)*1000)
+
+```
+If Maryland's usage or rural v uran is considered, urban areas still have a higher deaths per pop rate, but it closes slightly.
+
 
 
 Questions for Sean:
@@ -387,10 +519,18 @@ Questions for Sean:
 -seeking medical help for medical problems were not listed as something important to rural participants, but there were no differences between rural and urban regarding seeking help for mental, drug or alcohol problems
 -higher use of hydrocodone and OxyCotin in rural areas
 
+-education, unemployment rate by county, disability
+-institute for rural jounalism and community issues
+
+
+For maryland 
+-shipments by census tract, pull down maryland raw data, table for the census tract for each pharmacy, compute pills by census tract
+
 
 
 Next steps:
 -Linear regression model? data camp
+-predict pills per person, or death rate, or both
 -> I have done some data camp exercises for this.
 -Opioid death data 
 -Why?
