@@ -370,7 +370,7 @@ nation_pills_per_person_per_year <- nation_pills__per_year %>%
 
 ```{r}
 #open rural and urban codes for the nation
-rural_urban_codes <- read_csv("ruralurbancodes2013.csv")
+rural_urban_codes <- read_csv("ruralurbancodes2013.csv")qa
 ```
 
 ```{r}
@@ -493,6 +493,55 @@ maryland_opioids %>%
 ```
 If Maryland's usage or rural v uran is considered, urban areas still have a higher deaths per pop rate, but it closes slightly.
 
+
+Utilizing census tracts may give a better idea of the rural v urban differences. Census tracts will break down areas better especially for counties with rural and urban areas.
+
+```{r}
+#download raw pharmacy data
+maryland_pharmacies <- pharm_counties(state= "MD", key=key)
+
+```
+
+
+```{r}
+#combining data with census tracts
+
+tract_pills <- read.csv("tract_pills.csv")
+
+```
+
+```{r}
+#join maryland pharmacies and acros tracts
+
+md_pharm_tracts <- maryland_pharmacies %>%
+  inner_join(acros_tracts, by=c("BUYER_DEA_NO"="buyer_dea_no"))
+
+```
+
+```{r}
+glimpse(md_pharm_tracts)
+glimpse(tract_pills)
+
+#make GEOID chr so that it can be joined
+tract_pills$GEOID <- as.character(tract_pills$GEOID)
+
+#join md pharm tracts with tract pills
+
+md_pharm_tracts_pills <- md_pharm_tracts %>%
+  inner_join(tract_pills, by=c("geoid"="GEOID"))
+
+```
+
+Add New York Times census tract labels 
+(Source: https://gist.github.com/gebelo/758b91992bfc964d70d0744cd3042eb9)
+```{r}
+#upload tracts from the NY times artice 
+
+nytimes_tracts <- read.csv("nytimesdensity.csv")
+
+
+
+```
 
 
 Questions for Sean:
