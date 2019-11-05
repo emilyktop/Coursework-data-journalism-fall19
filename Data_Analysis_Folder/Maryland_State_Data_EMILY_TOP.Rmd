@@ -537,12 +537,38 @@ Add New York Times census tract labels
 ```{r}
 #upload tracts from the NY times artice 
 
-nytimes_tracts <- read.csv("nytimesdensity.csv")
-
-
+nytimes_tracts <- read_csv("nytdensity.csv")
 
 ```
 
+```{r}
+#make GEOID chr so that it can be joined
+nytimes_tracts$geoid <- as.character(nytimes_tracts$geoid)
+
+#combine nytimes tracts to mdpharmtractspills
+
+md_pharm_tracts_pills_labels <- md_pharm_tracts_pills %>%
+  inner_join(nytimes_tracts, by=c("geoid"))
+
+```
+
+```{r}
+#look at rural v urban with census tracts 
+glimpse(md_pharm_tracts_pills_labels)
+
+md_pharm_tracts_pills_labels %>%
+  group_by(county_fips, tract_type) %>%
+  summarise(county_total_pop = sum(total_2010_population), county_total_pills = sum(total_pills)) %>%
+  filter(!is.na(county_total_pop), !is.na(county_total_pills)) %>%
+  group_by(tract_type) %>%
+  summarise(group_total_pop = sum(county_total_pop), group_total_pills = sum(county_total_pills)) %>%
+  mutate(group_pills_per_person = group_total_pills/ group_total_pop)
+
+```
+
+^^ check the above b/c population is just 2010 population... 
+
+If the above analysis is correct, places in the inner ring have the highest pills per person compared to all other places. The inner ring are denser suburbs and outer ring is less dense suburbs. 
 
 Questions for Sean:
 -How do I create the average pills per year for each county? --> 
