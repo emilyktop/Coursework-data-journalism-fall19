@@ -26,6 +26,11 @@ library(ggthemes)
 library(scales)
 library(mapview)
 library(ggrepel)
+library(tibble)
+library(sf)
+#install.packages("maps")
+library(maps)
+options(tigris_use_cache = TRUE)
 
 ```
 
@@ -95,6 +100,8 @@ theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
   guides(fill="none")
 
 ```
+Allegany, Cecil and Kent had high numbers of pills per person across the time period. Cecil had a large drop in 2012. What happened?
+
 
 The Rural Maryland Council, which is a part of the Maryland state government, defines the following counties as rural in Maryland: Allegany, Calvert, Caroline, Carroll, Cecil, Charles, Dorchester, Frederick, Garrett, Harford, Kent, Queen Anne’s, Somerset, St. Mary’s, Talbot, Washington, Wicomico and Worcester (https://rural.maryland.gov/the-rural-maryland-council/).
 
@@ -140,6 +147,9 @@ maryland_rural_urban %>%
 
 ```
 
+Given Maryland's definition of "rural," there is a significant difference in the pills per person in rural areas as compared to the pills per person in urban areas. 
+
+
 ```{r}
 #using census definition of rural
 maryland_rural_urban2 <- maryland_pills_per_person_per_year %>%
@@ -163,12 +173,10 @@ maryland_rural_urban2 %>%
   group_by(rural_or_urban) %>%
   summarise(group_total_pop = sum(county_total_pop), group_total_pills = sum(county_total_pills)) %>%
   mutate(group_pills_per_person = group_total_pills/group_total_pop)
-  
-
-
 
 ```
 
+Given the census's definition of "rural," the difference between rural and urban is not as large, but there is still a higher number of pills per person in rural areas as compared to urban areas. 
 
 
 ```{r}
@@ -231,13 +239,17 @@ maryland_rural_urban %>%
   geom_bar(stat="identity", aes(year, total_pills, fill=rural_or_urban)) +
   labs(x="Year", y="Total pills", title="Steady rise in opioids in Maryland up until 2011, slight drop in 2012", caption = "Source: DEA ARCOS database, via Washington Post", fill="County") +
   scale_x_continuous(breaks = c(2006, 2007, 2008, 2009, 2010, 2011, 2012)) +
-  scale_y_continuous(labels = comma)
+  scale_y_continuous(labels = comma) +
+  facet_wrap(.~rural_or_urban)
   
 
 ```
 
 ```{r}
 # map code here
+# Define API Key
+census_api_key("fc6d975718c9991150322ee6fa8f8b8718c217b6")
+
 # If you need to look up variables, this is how you do it
 acs_variables <- load_variables(2017, "acs5" )
 
@@ -286,6 +298,8 @@ geo_pills_population_maryland %>%
 
 
 ```
+
+Pills per person, over the years, in Maryland gradually increased but saw a slight decrease in 2012, overall.
 
 
 Rural areas are generally know to be poorer. I want to test this theory to see if the poorer counties had a higher influx of pills than the wealthier counties. This analysis below will be for just 2012.
@@ -370,7 +384,7 @@ nation_pills_per_person_per_year <- nation_pills__per_year %>%
 
 ```{r}
 #open rural and urban codes for the nation
-rural_urban_codes <- read_csv("ruralurbancodes2013.csv")qa
+rural_urban_codes <- read_csv("ruralurbancodes2013.csv")
 ```
 
 ```{r}
@@ -410,18 +424,20 @@ nation_rural_urban %>%
 
 ```
 
+Throughout the country, rural areas had a significantly higher number of pills per person over the ARCOS database timeline as compared to urban areas. 
+
 ```{r}
 #add opioid death data 
 
 opioid_deaths <- read_csv("opioid_deaths.csv") %>%
   clean_names()
 
-view(opioid_deaths)
+#view(opioid_deaths)
 
 opioid_deaths <- opioid_deaths %>%
   clean_names()
 
-glimpse(opioid_deaths)
+#glimpse(opioid_deaths)
 
 #change county_code to a character
 opioid_deaths$county_code <- as.character(opioid_deaths$county_code)
@@ -463,35 +479,51 @@ What about in Maryland?
 
 ```{r}
 
+pills_deaths_rural$age_adjusted_rate <- as.numeric(pills_deaths_rural$age_adjusted_rate)
+
 pills_deaths_rural %>%
   filter(buyer_state.x == "MD") %>%
-  group_by(countyfips, rural_or_urban) %>%
-  summarise(county_total_pop = sum(population.x), county_total_deaths = sum(deaths)) %>%
-  filter(!is.na(county_total_pop), !is.na(county_total_deaths)) %>%
   group_by(rural_or_urban) %>%
-  summarise(group_total_pop = sum(county_total_pop), group_total_deaths = sum(county_total_deaths)) %>%
-  mutate(group_deaths_per_pop = (group_total_deaths/ group_total_pop)*1000)
+  count(rural_or_urban)
+
 
 ```
 
-It appears that in Maryland, the number of deaths due to opioids in not higher in rural areas than it is in urban areas. What about when we look at it based on Maryland's definition of rural v urban?
+```{r}
+#count w/ filter of NA
+pills_deaths_rural %>%
+  filter(buyer_state.x == "MD") %>%
+  filter(!is.na(age_adjusted_rate)) %>%
+  group_by(rural_or_urban) %>%
+  count(rural_or_urban)
+
+```
+
+Given the available data of rural and urban opioid deaths, for those with accurate / available information, there are only 7 in the rural category as compared to 126 in the urban category, making the rates basically not comparable. 
+
 
 ```{r}
 #join death information with maryland information
 
-maryland_opioids <- maryland_rural_urban2 %>%
+maryland_opioids <- maryland_rural_urban %>%
   inner_join(opioid_deaths, by=c("countyfips.x"="county_code"))
 
 maryland_opioids %>%
-  group_by(countyfips.x, rural_or_urban) %>%
-  summarise(county_total_pop = sum(population.x), county_total_deaths = sum(deaths)) %>%
-  filter(!is.na(county_total_pop), !is.na(county_total_deaths)) %>%
   group_by(rural_or_urban) %>%
-  summarise(group_total_pop = sum(county_total_pop), group_total_deaths = sum(county_total_deaths)) %>%
-  mutate(group_deaths_per_pop = (group_total_deaths/ group_total_pop)*1000)
+  count(rural_or_urban)
 
 ```
-If Maryland's usage or rural v uran is considered, urban areas still have a higher deaths per pop rate, but it closes slightly.
+
+```{r}
+
+maryland_opioids %>%
+  filter(!age_adjusted_rate== "Unreliable") %>%
+  group_by(rural_or_urban) %>%
+  count(rural_or_urban)
+
+```
+
+Using Maryland's definition of "rural" v "urban", over 30 bits of data are labeled "unreliable," i.e. missing.  
 
 
 Utilizing census tracts may give a better idea of the rural v urban differences. Census tracts will break down areas better especially for counties with rural and urban areas.
@@ -502,6 +534,11 @@ maryland_pharmacies <- pharm_counties(state= "MD", key=key)
 
 ```
 
+```{r}
+#download arcos pharm tracts
+acros_tracts <- pharm_tracts(key=key)
+
+```
 
 ```{r}
 #combining data with census tracts
@@ -510,17 +547,19 @@ tract_pills <- read.csv("tract_pills.csv")
 
 ```
 
+
+***Below is not used***
 ```{r}
 #join maryland pharmacies and acros tracts
 
 md_pharm_tracts <- maryland_pharmacies %>%
-  inner_join(acros_tracts, by=c("BUYER_DEA_NO"="buyer_dea_no"))
+  inner_join(acros_tracts, by=c("BUYER_DEA_NO"))
 
 ```
 
 ```{r}
-glimpse(md_pharm_tracts)
-glimpse(tract_pills)
+#glimpse(md_pharm_tracts)
+#glimpse(tract_pills)
 
 #make GEOID chr so that it can be joined
 tract_pills$GEOID <- as.character(tract_pills$GEOID)
@@ -528,9 +567,11 @@ tract_pills$GEOID <- as.character(tract_pills$GEOID)
 #join md pharm tracts with tract pills
 
 md_pharm_tracts_pills <- md_pharm_tracts %>%
-  inner_join(tract_pills, by=c("geoid"="GEOID"))
+  inner_join(tract_pills, by=c("GEOID"))
 
 ```
+***Above is not used***
+
 
 Add New York Times census tract labels 
 (Source: https://gist.github.com/gebelo/758b91992bfc964d70d0744cd3042eb9)
@@ -545,30 +586,109 @@ nytimes_tracts <- read_csv("nytdensity.csv")
 #make GEOID chr so that it can be joined
 nytimes_tracts$geoid <- as.character(nytimes_tracts$geoid)
 
-#combine nytimes tracts to mdpharmtractspills
+#combine nytimes tracts to tract pills
+ny_tracts <- nytimes_tracts %>%
+  inner_join(tract_pills, by=c("geoid"="GEOID"))
 
-md_pharm_tracts_pills_labels <- md_pharm_tracts_pills %>%
-  inner_join(nytimes_tracts, by=c("geoid"))
+
 
 ```
 
 ```{r}
 #look at rural v urban with census tracts 
-glimpse(md_pharm_tracts_pills_labels)
+#glimpse(md_pharm_tracts_pills_labels)
 
-md_pharm_tracts_pills_labels %>%
-  group_by(county_fips, tract_type) %>%
-  summarise(county_total_pop = sum(total_2010_population), county_total_pills = sum(total_pills)) %>%
-  filter(!is.na(county_total_pop), !is.na(county_total_pills)) %>%
+ny_tracts %>%
+  filter(state == "MD") %>%
   group_by(tract_type) %>%
-  summarise(group_total_pop = sum(county_total_pop), group_total_pills = sum(county_total_pills)) %>%
+  filter(!is.na(total_2010_population), !is.na(total_pills)) %>%
+  summarise(group_total_pop = sum(total_2010_population), group_total_pills = sum(total_pills)) %>%
   mutate(group_pills_per_person = group_total_pills/ group_total_pop)
 
 ```
 
-^^ check the above b/c population is just 2010 population... 
+Inner ring areas have the highest pills per person. These areas include places just outside large metropolitan areas. The next highest group is then outer ring, then rural. Urban areas received the lowest pills per person by census tract in the state. 
 
-If the above analysis is correct, places in the inner ring have the highest pills per person compared to all other places. The inner ring are denser suburbs and outer ring is less dense suburbs. 
+
+***Attempt to chart census tract information geographically***
+
+```{r}
+library(sf)
+options(tigris_use_cache = TRUE)
+
+totalpop_sf <- reduce(
+  map(us, function(x) {
+    get_acs(geography = "tract", variables = "B01001_001", 
+            state =MD, geometry = TRUE)
+  }), 
+  rbind
+)
+
+str(totalpop_sf)
+
+```
+
+```{r}
+#Test of getting census tract data
+ test <- get_acs(table = "B01001",
+                 state = "MD",
+                 year = 2017,
+                 geography = "tract",
+                cache_table = TRUE,
+                geometry = FALSE)
+
+```
+
+
+```{r}
+#add census tract geo data
+
+md_census_tract_geo2 <- get_acs(state = "MD", geography = "tract", 
+                  variables = "B01001_001", geometry = TRUE)
+
+
+```
+
+```{r}
+#combine geo data with tract data
+md_pharm_geodata <- md_pharm_tracts_pills_labels %>%
+  inner_join(md_census_tract_geo2, by=c("GEOID"))
+
+md_pharm_geodata %>%
+  group_by(county_fips, tract_type, year) %>%
+  summarise(county_total_pop = sum(total_2010_population), county_total_pills = sum(total_pills)) %>%
+  filter(!is.na(county_total_pop), !is.na(county_total_pills)) %>%
+  group_by(tract_type, year) %>%
+  summarise(group_total_pop = sum(county_total_pop), group_total_pills = sum(county_total_pills)) %>%
+  mutate(group_pills_per_person = group_total_pills/ group_total_pop)
+
+ggplot(md_pharm_geodata, aes(fill = total_pills, color = total_pills)) + 
+  geom_sf() + 
+  coord_sf(crs = 26910) + 
+  facet_wrap(~year, scales = "free", nrow = 1) + 
+  theme_minimal() + 
+  theme(aspect.ratio = 1) + 
+  scale_fill_viridis() + 
+  scale_color_viridis()
+
+
+
+```
+
+
+```{r}
+library(viridis)
+
+ggplot(md_pharm_geodata2, aes(fill = group_pills_per_person, color = group_pills_per_person, geometry= geometry)) + 
+  geom_sf() + 
+  coord_sf(crs = 26910) + 
+  facet_wrap(~year, scales = "free", nrow = 1) + 
+  theme_minimal() + 
+  theme(aspect.ratio = 1) + 
+  scale_fill_viridis() + 
+  scale_color_viridis()
+
+```
 
 Questions for Sean:
 -How do I create the average pills per year for each county? --> 
