@@ -34,16 +34,17 @@ options(tigris_use_cache = TRUE)
 
 ```
 
-```{r}
-# store one of our API keys as an object called key
-key <- "uO4EK6I"
-```
-
 Clear old data in in environment
 ```{r}
 rm(list = ls())
 
 ```
+
+```{r}
+# store one of our API keys as an object called key
+key <- "uO4EK6I"
+```
+
 
 Load the data needed and clean up the column names.
 
