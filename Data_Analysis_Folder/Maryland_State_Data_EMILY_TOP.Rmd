@@ -91,9 +91,23 @@ Once the various columns have been calculated, create a graphic to view the data
 ```{r}
 #Create a graphic for maryland pills per person over time, separate graphs for different areas
 
+md_county_graph <- maryland_pills_per_person_per_year %>%
+  filter(buyer_county %in% c("ALLEGANY",  "BALTIMORE","CECIL", "MONTGOMERY", "WICOMICO", "PRINCE GEORGES", "KENT", "BALTIMORE CITY", "HOWARD", "WORCESTER"))
+  
+ggplot(md_county_graph) +
+  geom_bar(stat="identity", aes(year, pills_per_person, fill=buyer_county)) +
+  labs(x="Year", y="Pills per Person", title="Allegany, Kent, and Cecil counties had higher pills per person than \nother counties. Cecil county drops significantly in 2012.", caption = "Source: DEA ARCOS database, via Washington Post", fill="County") +
+  scale_x_continuous(breaks = c(2006, 2007, 2008, 2009, 2010, 2011, 2012)) +
+  scale_y_continuous(labels = comma) +
+  facet_wrap(nrow=2, . ~ buyer_county) +
+theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  guides(fill="none")
+
+
+#For all counties
 ggplot(maryland_pills_per_person_per_year) +
   geom_bar(stat="identity", aes(year, pills_per_person, fill=buyer_county)) +
-  labs(x="Year", y="Pills per Person", title="Allegany, Kent, and Cecil counties had higher pills per person than \nother counties. Cecil county drops nearer to the average in 2012.", caption = "Source: DEA ARCOS database, via Washington Post", fill="County") +
+  labs(x="Year", y="Pills per Person", title="Allegany, Kent, and Cecil counties had higher pills per person than \nother counties. Cecil county drops significantly in 2012.", caption = "Source: DEA ARCOS database, via Washington Post", fill="County") +
   scale_x_continuous(breaks = c(2006, 2007, 2008, 2009, 2010, 2011, 2012)) +
   scale_y_continuous(labels = comma) +
   facet_wrap(nrow=2, . ~ buyer_county) +
@@ -102,6 +116,13 @@ theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
 
 ```
 Allegany, Cecil and Kent had high numbers of pills per person across the time period. Cecil had a large drop in 2012. What happened?
+
+```{r}
+maryland_pills_per_person_per_year %>%
+  arrange(desc(pills_per_person))
+
+
+```
 
 
 The Rural Maryland Council, which is a part of the Maryland state government, defines the following counties as rural in Maryland: Allegany, Calvert, Caroline, Carroll, Cecil, Charles, Dorchester, Frederick, Garrett, Harford, Kent, Queen Anne’s, Somerset, St. Mary’s, Talbot, Washington, Wicomico and Worcester (https://rural.maryland.gov/the-rural-maryland-council/).
@@ -549,31 +570,6 @@ tract_pills <- read.csv("tract_pills.csv")
 ```
 
 
-***Below is not used***
-```{r}
-#join maryland pharmacies and acros tracts
-
-md_pharm_tracts <- maryland_pharmacies %>%
-  inner_join(acros_tracts, by=c("BUYER_DEA_NO"))
-
-```
-
-```{r}
-#glimpse(md_pharm_tracts)
-#glimpse(tract_pills)
-
-#make GEOID chr so that it can be joined
-tract_pills$GEOID <- as.character(tract_pills$GEOID)
-
-#join md pharm tracts with tract pills
-
-md_pharm_tracts_pills <- md_pharm_tracts %>%
-  inner_join(tract_pills, by=c("GEOID"))
-
-```
-***Above is not used***
-
-
 Add New York Times census tract labels 
 (Source: https://gist.github.com/gebelo/758b91992bfc964d70d0744cd3042eb9)
 ```{r}
@@ -601,101 +597,109 @@ ny_tracts <- nytimes_tracts %>%
 
 ny_tracts %>%
   filter(state == "MD") %>%
-  group_by(tract_type) %>%
+  mutate(tract_type = str_remove_all(tract_type, "\\)|1|2|3|4")) %>%
+  mutate(tract_type = str_replace(tract_type, "INNER RING", "suburbs")) %>%
+  mutate(tract_type = str_replace(tract_type, "OUTER RING", "suburbs")) %>%
+  mutate(tract_type = str_replace(tract_type, "RURAL", "rural")) %>%
+  mutate(tract_type = str_replace(tract_type, "URBAN", "urban")) %>%
   filter(!is.na(total_2010_population), !is.na(total_pills)) %>%
+  group_by(tract_type) %>%
+  summarise(group_total_pop = sum(total_2010_population), group_total_pills = sum(total_pills)) %>%
+  mutate(group_pills_per_person = group_total_pills/ group_total_pop)
+
+md_census_tract_geo2 <- get_acs(state = "MD", geography = "tract", 
+                  variables = "B01001_001", geometry = TRUE) %>%
+  clean_names()
+
+
+geom_nyt_tract_join <- md_census_tract_geo2 %>%
+  inner_join(nytimes_tracts, by=c("geoid")) %>%
+  select(geoid,name,tract_type, geometry) %>%
+  mutate(tract_type = str_remove_all(tract_type, "\\)|1|2|3|4")) %>%
+  mutate(tract_type = str_replace(tract_type, "INNER RING", "suburbs")) %>%
+  mutate(tract_type = str_replace(tract_type, "OUTER RING", "suburbs")) %>%
+  mutate(tract_type = str_replace(tract_type, "RURAL", "rural")) %>%
+  mutate(tract_type = str_replace(tract_type, "URBAN", "urban"))
+
+#graph rural, suburban, and urban
+geom_nyt_tract_join %>%
+  ggplot(aes(fill = tract_type)) +
+  geom_sf(lwd = 0) +
+  theme_map()  +
+  labs(fill='tract_type',title="Visualization of rural, suburban, and urban areas in Maryland", subtitle= "BY EMILY TOP | CAPITAL NEWS SERVICE", caption = "Source: The Census Bureau and The New York Times") +
+        scale_fill_manual(values=c("#990000", "#666666", "#faE255"), 
+                       name="tract_type",
+                       breaks=c("rural", "suburbs", "urban"),
+                       labels=c("Rural", "Suburbs", "Urban"))
+  
+  
+
+#save most recent plot  
+   ggsave("maryland_tracts3.png", plot=last_plot())
+  
+
+glimpse(ny_tracts)
+
+```
+
+Inner ring areas have the highest pills per person. These areas include places just outside large metropolitan areas. The next highest group is then outer ring, then rural. Urban areas received the lowest pills per person by census tract in the state. When inner and outer ring are combined, they are basically they average of the two separated
+
+```{r}
+#national pills per person with census tracts
+
+ny_tracts %>%
+  mutate(tract_type = str_remove_all(tract_type, "\\)|1|2|3|4")) %>%
+  mutate(tract_type = str_replace(tract_type, "INNER RING", "suburbs")) %>%
+  mutate(tract_type = str_replace(tract_type, "OUTER RING", "suburbs")) %>%
+  mutate(tract_type = str_replace(tract_type, "RURAL", "rural")) %>%
+  mutate(tract_type = str_replace(tract_type, "URBAN", "urban")) %>%
+  filter(!is.na(total_2010_population), !is.na(total_pills)) %>%
+  group_by(tract_type) %>%
   summarise(group_total_pop = sum(total_2010_population), group_total_pills = sum(total_pills)) %>%
   mutate(group_pills_per_person = group_total_pills/ group_total_pop)
 
 ```
 
-Inner ring areas have the highest pills per person. These areas include places just outside large metropolitan areas. The next highest group is then outer ring, then rural. Urban areas received the lowest pills per person by census tract in the state. 
-
-
-***Attempt to chart census tract information geographically***
-
-```{r}
-library(sf)
-options(tigris_use_cache = TRUE)
-
-totalpop_sf <- reduce(
-  map(us, function(x) {
-    get_acs(geography = "tract", variables = "B01001_001", 
-            state =MD, geometry = TRUE)
-  }), 
-  rbind
-)
-
-str(totalpop_sf)
-
-```
-
-```{r}
-#Test of getting census tract data
- test <- get_acs(table = "B01001",
-                 state = "MD",
-                 year = 2017,
-                 geography = "tract",
-                cache_table = TRUE,
-                geometry = FALSE)
-
-```
 
 
 ```{r}
 #add census tract geo data
 
 md_census_tract_geo2 <- get_acs(state = "MD", geography = "tract", 
-                  variables = "B01001_001", geometry = TRUE)
+                  variables = "B01001_001", geometry = TRUE) %>%
+  clean_names()
+
+geom_nyt_tract_join <- md_census_tract_geo2 %>%
+  inner_join(nytimes_tracts, by=c("geoid")) %>%
+  select(geoid,name,tract_type, geometry)
+
+ geom_nyt_tract_join %>%
+  ggplot(aes(fill = tract_type)) +
+  geom_sf(lwd = 0) +
+  theme_map() 
+ 
+ 
+geom_nyt_tract_county <- md_census_tract_geo2 %>%
+  inner_join(ny_tracts, by=c("geoid")) %>%
+  separate(name, into=c("a","county","c"), sep=",") %>%
+  filter(year==2010) %>%
+  select(-a,-c) %>%
+  mutate(county=str_trim(county)) %>%
+  filter(!is.na(total_2010_population), !is.na(total_pills)) %>%
+  group_by(county, tract_type) %>%
+  summarise(group_total_pop = sum(total_2010_population), group_total_pills = sum(total_pills), count=n()) %>%
+  mutate(group_pills_per_person = group_total_pills/ group_total_pop) %>%
+  select(county, tract_type, group_pills_per_person, count)
 
 
-```
-
-```{r}
-#combine geo data with tract data
-md_pharm_geodata <- md_pharm_tracts_pills_labels %>%
-  inner_join(md_census_tract_geo2, by=c("GEOID"))
-
-md_pharm_geodata %>%
-  group_by(county_fips, tract_type, year) %>%
-  summarise(county_total_pop = sum(total_2010_population), county_total_pills = sum(total_pills)) %>%
-  filter(!is.na(county_total_pop), !is.na(county_total_pills)) %>%
-  group_by(tract_type, year) %>%
-  summarise(group_total_pop = sum(county_total_pop), group_total_pills = sum(county_total_pills)) %>%
-  mutate(group_pills_per_person = group_total_pills/ group_total_pop)
-
-ggplot(md_pharm_geodata, aes(fill = total_pills, color = total_pills)) + 
-  geom_sf() + 
-  coord_sf(crs = 26910) + 
-  facet_wrap(~year, scales = "free", nrow = 1) + 
-  theme_minimal() + 
-  theme(aspect.ratio = 1) + 
-  scale_fill_viridis() + 
-  scale_color_viridis()
-
-
-
-```
-
-
-```{r}
-library(viridis)
-
-ggplot(md_pharm_geodata2, aes(fill = group_pills_per_person, color = group_pills_per_person, geometry= geometry)) + 
-  geom_sf() + 
-  coord_sf(crs = 26910) + 
-  facet_wrap(~year, scales = "free", nrow = 1) + 
-  theme_minimal() + 
-  theme(aspect.ratio = 1) + 
-  scale_fill_viridis() + 
-  scale_color_viridis()
+ +
+  labs(fill='Pills per Person',title="Pills per person grew between 2006 and 2012 in Maryland", subtitle = "2006 thru 2012 pills per person, U.S. Census and ARCOS data", caption = "Source: ARCOS database") +
+  theme(legend.position="bottom") +
+  scale_fill_viridis_c(option = "magma",labels = comma)
 
 ```
 
-Questions for Sean:
--How do I create the average pills per year for each county? --> 
--Is there any way to do the income analysis over the seven year period? --> use income median average over the period
--Who are good people to contact and interview?
--Maryland Health Department, Public Health Research in Rural Areas, academic research papers (for potential variables)
+
 
 --Why is it higher in rural areas?
 ( Source: https://www-ncbi-nlm-nih-gov.proxy-um.researchport.umd.edu/pmc/articles/PMC3935688/pdf/AJPH.2013.301709.pdf)
